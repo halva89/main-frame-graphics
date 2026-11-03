@@ -7,7 +7,7 @@
 [![Windows](https://img.shields.io/badge/Windows-10%2B-blue)](https://www.microsoft.com/windows)
 [![Linux](https://img.shields.io/badge/Linux-x86%20%2F%20ARM-green)](https://www.linux.org/)
 [![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon-lightgrey)](https://www.apple.com/macos/)
-[![Version](https://img.shields.io/badge/Version-Beryllium%20v0.1-blueviolet)](https://github.com/halva89/Snow-Graphics-System/releases)
+[![Version](https://img.shields.io/badge/Version-Beryllium%20v0.1-blueviolet)](https://github.com/halva89/main-frame-graphics/releases)
 [![Author](https://img.shields.io/badge/Author-Halva-blue)](https://github.com/halva89)
 
 ---
@@ -36,7 +36,7 @@ main.frame — собственный, полностью контролируе
 ### Версии
 
 Версии до выхода Beta обозначаются элементами таблицы Менделеева. После выхода
-Beta — в честь гор. Все релизы можно посмотреть [здесь](https://github.com/halva89/Snow-Graphics-System/releases).
+Beta — в честь гор. Все релизы можно посмотреть [здесь](https://github.com/halva89/main-frame-graphics/releases).
 
 1. **Alpha 1: Uranium.** Создан первый треугольник и шейдеры. Архитектура не обозначена. [X] ВЫПОЛНЕНО
 2. **Alpha 2: Gold.** Создан базовый парсер файлов `.mff`. Архитектура Rusty Wolf. [X] ВЫПОЛНЕНО
@@ -55,19 +55,19 @@ Beta — в честь гор. Все релизы можно посмотрет
 
 Оценено по реальным замерам release-бинарника (см. ниже) — движок очень лёгкий:
 обычные сцены ~100 МБ RAM, стрессовая (1400 объектов) ~150 МБ, процесс занимает
-единицы процентов одного ядра.
+единицы процентов одного ядра. Повторить можно установив в качестве основной сцены сцену stress-test.mff
 
 **Минимальные:**
-- Система: Windows 7+ / Linux / macOS (главное — наличие Vulkan)
+- Система: Windows 10 / Linux / macOS (главное — наличие Vulkan)
 - Процессор: любое x86-64 или ARM64 ядро
-- Оперативная память: 512 МБ
+- Оперативная память: 1 ГБ
 - Видеокарта: поддержка Vulkan 1.0 (драйвер 2015+)
-- Диск: ~5 МБ на установку
+- Диск: ~100 МБ на установку
 
 **Рекомендуемые:**
 - Система: Windows 10/11, современный Linux или macOS
 - Процессор: любой двухъядерный (разработка ведётся на Intel UHD)
-- Оперативная память: 1 ГБ
+- Оперативная память: 2 ГБ
 - Видеокарта: любой Vulkan 1.0 драйвер
 
 *Замеры (release, 12-ядерный CPU, интегрированная графика):* thermal — 100 МБ RAM / ~2% одного ядра; frame — 98 МБ / ~1%; stress (1400 объектов) — 153 МБ / ~5%.**
@@ -76,7 +76,7 @@ Beta — в честь гор. Все релизы можно посмотрет
 
 ### Установка
 
-1. Установите из [релизов](https://github.com/halva89/Snow-Graphics-System/releases) последнюю подходящую версию.
+1. Установите из [релизов](https://github.com/halva89/main-frame-graphics/releases) последнюю подходящую версию.
 2. Распакуйте папку `release`.
 3. Откройте папку и запустите `main_frame.exe <сцена.mff>` (например, `main_frame.exe thermal.mff`).
 
@@ -89,7 +89,7 @@ Beta — в честь гор. Все релизы можно посмотрет
 ### Сборка на Linux / macOS
 
 Проект кроссплатформенный (Win32-вызовы спрятаны под `#[cfg(windows)]`). Нужен драйвер
-с поддержкой **Vulkan** и системные dev-библиотеки **GLFW** (крэйт `glfw` тянет их при сборке).
+с поддержкой **Vulkan** и системные dev-библиотеки **winit** (крэйт `winit` тянет их при сборке).
 
 **Debian / Ubuntu:**
 ```bash
