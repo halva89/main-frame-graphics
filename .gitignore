@@ -7,3 +7,7 @@ shaders/*.exe
 # Локальный config.toml (хардкодит Windows-путь target-dir для обхода FAT32) —
 # машино-зависимый, в репозиторий не коммитится
 /.cargo/config.toml
+
+*.zip
+*.swift
+runlog.txt
