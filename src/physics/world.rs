@@ -17,7 +17,7 @@ pub struct PhysicsWorld {
 
 impl PhysicsWorld {
     pub fn new() -> Self {
-        Self {
+        let mut world = Self {
             gravity: vector![0.0, -9.81, 0.0],
             integration_parameters: IntegrationParameters::default(),
             physics_pipeline: PhysicsPipeline::new(),
@@ -29,7 +29,14 @@ impl PhysicsWorld {
             impulse_joints: ImpulseJointSet::new(),
             multibody_joints: MultibodyJointSet::new(),
             ccd_solver: CCDSolver::new(),
-        }
+        };
+        // Неявный пол мира: горизонтальная полуплоскость на y = 0. Сцены рисуют
+        // визуальный пол без physics-свойств, поэтому без этого тела падают вниз.
+        let ground = RigidBodyBuilder::fixed().build();
+        let gh = world.bodies.insert(ground);
+        let halfspace = ColliderBuilder::halfspace(-Vector::y_axis()).build();
+        world.colliders.insert_with_parent(halfspace, gh, &mut world.bodies);
+        world
     }
 
     pub fn add_body(&mut self, pos: Vector<f32>, half: Vector<f32>, mass: f32, restitution: f32) -> RigidBodyHandle {
@@ -59,7 +66,6 @@ impl PhysicsWorld {
     }
 
     pub fn step(&mut self) {
-        println!("[Physics] step bodies={}", self.bodies.len());
         self.physics_pipeline.step(
             &self.gravity,
             &self.integration_parameters,
@@ -75,7 +81,6 @@ impl PhysicsWorld {
             &(),
             &(),
         );
-        println!("[Physics] step done");
     }
 
     pub fn get_body_pos(&self, handle: RigidBodyHandle) -> Vector<f32> {

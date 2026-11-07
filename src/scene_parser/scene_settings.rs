@@ -45,8 +45,6 @@ pub struct SceneSettings {
     pub render_mode: RenderMode,
     pub aa_type: AaType,
     pub camera_enabled: bool,
-<<<<<<< Updated upstream
-=======
     pub camera_pos: (f32, f32, f32),
     pub camera_target: (f32, f32, f32),
     pub decorated: bool,
@@ -55,7 +53,6 @@ pub struct SceneSettings {
     pub texture: Option<String>,
     pub background: Color,
     pub thermal: bool,
->>>>>>> Stashed changes
 }
 
 impl Default for SceneSettings {
@@ -67,8 +64,6 @@ impl Default for SceneSettings {
             render_mode: RenderMode::Light,
             aa_type: AaType::None,
             camera_enabled: true,
-<<<<<<< Updated upstream
-=======
             camera_pos: (0.0, 0.0, 5.0),
             camera_target: (0.0, 0.0, 0.0),
             decorated: true,
@@ -77,7 +72,6 @@ impl Default for SceneSettings {
             texture: None,
             background: Color::new(0.63, 0.91, 1.0),
             thermal: false,
->>>>>>> Stashed changes
         }
     }
 }
@@ -126,7 +120,7 @@ pub fn parse_settings(lines: &[&str], i: &mut usize) -> SceneSettings {
                 match parts[1].to_lowercase().as_str() {
                     "none" | "off" | "0" => settings.aa_type = AaType::None,
                     "msaa2" | "2x" => settings.aa_type = AaType::Msaa2,
-                    "msaa4" | "4x" => settings.aa_type = AaType::Msaa4,
+                    "msaa4" | "4x" | "msaa4w" => settings.aa_type = AaType::Msaa4,
                     "fxaa" => settings.aa_type = AaType::Fxaa,
                     _ => settings.aa_type = AaType::None,
                 }
@@ -192,8 +186,6 @@ pub fn parse_settings(lines: &[&str], i: &mut usize) -> SceneSettings {
             continue;
         }
 
-<<<<<<< Updated upstream
-=======
         if line.starts_with("thermal") {
             let parts: Vec<&str> = line.split_whitespace().collect();
             if parts.len() >= 2 {
@@ -257,7 +249,6 @@ if line.starts_with("decorated") {
             continue;
         }
 
->>>>>>> Stashed changes
         if line == "triangle" || line == "square" || line == "circle" || line == "cube" || line == "sphere" || line == "mesh" || line.starts_with("position") || line.starts_with("animate") {
             println!("[SettingsParser] Found shape, stopping settings parse");
             break;

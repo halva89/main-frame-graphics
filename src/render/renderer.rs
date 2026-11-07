@@ -29,10 +29,6 @@ impl Renderer {
         self.vulkan.set_camera(eye, target);
     }
 
-<<<<<<< Updated upstream
-    pub fn render(&mut self, scene: &Scene, w: u32, h: u32) {
-        self.vulkan.render_scene(scene, w, h);
-=======
     pub fn set_background(&mut self, color: Color) {
         self.vulkan.set_background(color);
     }
@@ -48,7 +44,6 @@ impl Renderer {
 
     pub fn render(&mut self, scene: &Scene, w: u32, h: u32, hover: u8, dt: f32) {
         self.vulkan.render_scene(scene, w, h, hover, dt);
->>>>>>> Stashed changes
     }
 
     pub fn cleanup(&mut self) {

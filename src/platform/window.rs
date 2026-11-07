@@ -18,6 +18,7 @@ pub struct CustomWindow {
     pub height: u32,
     pub title: String,
     pub initialized: bool,
+    pub decorated: bool,
 }
 
 impl CustomWindow {
@@ -31,6 +32,7 @@ impl CustomWindow {
             height: settings.height,
             title: settings.title.clone(),
             initialized: false,
+            decorated: settings.decorated,
         }
     }
 
@@ -38,7 +40,8 @@ impl CustomWindow {
         let window = elwt.create_window(
             Window::default_attributes()
                 .with_title(&self.title)
-                .with_inner_size(LogicalSize::new(self.width, self.height)),
+                .with_inner_size(LogicalSize::new(self.width, self.height))
+                .with_decorations(self.decorated),
         ).unwrap();
         let size = window.inner_size();
         self.width = size.width;
@@ -80,6 +83,7 @@ impl CustomWindow {
             height: h,
             title: String::new(),
             initialized: false,
+            decorated: true,
         }
     }
 }

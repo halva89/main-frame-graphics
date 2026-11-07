@@ -6,18 +6,13 @@ use crate::animation::Animator;
 use crate::math::Vec3;
 use crate::physics::PhysicsWorld;
 use crate::physics::PhysicsProps;
-use rapier3d::na::vector;
-<<<<<<< Updated upstream
 use rapier3d::prelude::RigidBodyHandle;
 use winit::keyboard::KeyCode;
 use winit::application::ApplicationHandler;
 use winit::event_loop::{ActiveEventLoop, EventLoop};
-use winit::event::WindowEvent;
-=======
-use glfw::{Key, MouseButton};
-use rayon::prelude::*;
+use winit::event::{WindowEvent, ElementState, MouseButton};
+use rapier3d::na::vector;
 use std::time::{SystemTime, Duration};
->>>>>>> Stashed changes
 
 pub struct Engine {
     settings: SceneSettings,
@@ -25,20 +20,27 @@ pub struct Engine {
     window: Option<CustomWindow>,
     renderer: Option<Renderer>,
     animator: Animator,
-<<<<<<< Updated upstream
-    physics: PhysicsWorld,
-    body_handles: Vec<RigidBodyHandle>,
-=======
     physics: Option<PhysicsWorld>,
     scene_path: String,
     last_mtime: Option<SystemTime>,
     reload_check: Duration,
->>>>>>> Stashed changes
     camera_pos: Vec3,
     camera_target: Vec3,
     yaw: f32,
     pitch: f32,
     camera_active: bool,
+    #[allow(dead_code)]
+    dragging: bool,
+    #[allow(dead_code)]
+    drag_ox: f32,
+    #[allow(dead_code)]
+    drag_oy: f32,
+    #[allow(dead_code)]
+    drag_wx: i32,
+    #[allow(dead_code)]
+    drag_wy: i32,
+    #[allow(dead_code)]
+    prev_mouse_down: bool,
 }
 
 impl Engine {
@@ -61,22 +63,15 @@ impl Engine {
             window: None,
             renderer: None,
             animator: Animator::new(),
-<<<<<<< Updated upstream
-            physics: PhysicsWorld::new(),
-            body_handles: Vec::new(),
-=======
             physics: Some(PhysicsWorld::new()),
             scene_path,
             last_mtime: None,
             reload_check: Duration::from_secs(0),
->>>>>>> Stashed changes
             camera_pos: Vec3::new(0.0, 0.0, 5.0),
             camera_target: Vec3::new(0.0, 0.0, 0.0),
             yaw: -90.0_f32.to_radians(),
             pitch: 0.0,
             camera_active,
-<<<<<<< Updated upstream
-=======
             dragging: false,
             drag_ox: 0.0,
             drag_oy: 0.0,
@@ -84,8 +79,11 @@ impl Engine {
             drag_wy: 0,
             prev_mouse_down: false,
         };
+        // Сцену загружает вызывающий (run_from), здесь только запоминаем mtime,
+        // чтобы hot-reload не сработал на первом же кадре.
         if !engine.scene_path.is_empty() {
-            engine.reload_scene();
+            engine.last_mtime = std::fs::metadata(&engine.scene_path)
+                .and_then(|m| m.modified()).ok();
         }
         // Стартовая камера из настроек сцены: строим yaw/pitch так, чтобы камера
         // смотрела из camera_pos на camera_target (по умолчанию совпадает с
@@ -154,79 +152,48 @@ impl Engine {
         } else if self.last_mtime.is_none() {
             // файл ещё не существует — первый раз запомним
             self.last_mtime = SystemTime::now().into();
->>>>>>> Stashed changes
         }
     }
 
     pub fn add_objects(&mut self, objects: Vec<SceneObject>) {
-<<<<<<< Updated upstream
-        for (i, obj) in objects.into_iter().enumerate() {
-            if let SceneObject::Animated(anim) = &obj {
-                self.animator.add_animation(&format!("anim_{}", i), anim.keyframes.clone());
-=======
         for obj in objects.into_iter() {
             if let SceneObject::Animated(anim, _) = &obj {
                 self.animator.add_animation(&anim.name, anim.keyframes.clone());
->>>>>>> Stashed changes
             }
             self.scene.add_object(obj);
         }
 
-        for obj in self.scene.get_objects() {
-            if obj.physics.is_some() {
-                let pos = obj.transform.position;
-                let half = 0.5;
-                let h = self.physics.add_body(
-                    vector![pos.0, pos.1, pos.2],
-                    vector![half, half, half],
-                    obj.physics.as_ref().unwrap().mass,
-                    obj.physics.as_ref().unwrap().restitution,
-                );
-                self.body_handles.push(h);
+        if let Some(physics) = self.physics.as_mut() {
+            for obj in self.scene.get_objects_mut() {
+                if let Some(props) = obj.physics.as_ref() {
+                    let (px, py, pz) = obj.transform.position;
+                    let (sx, sy, sz) = obj.transform.scale;
+                    // Полуразмеры берём из локального AABB меша и умножаем на масштаб.
+                    let (aabb_min, aabb_max) = (obj.aabb_min, obj.aabb_max);
+                    let hx = ((aabb_max.x - aabb_min.x) * 0.5 * sx).max(0.01);
+                    let hy = ((aabb_max.y - aabb_min.y) * 0.5 * sy).max(0.01);
+                    let hz = ((aabb_max.z - aabb_min.z) * 0.5 * sz).max(0.01);
+                    let h: RigidBodyHandle = physics.add_body(
+                        vector![px, py, pz],
+                        vector![hx, hy, hz],
+                        props.mass,
+                        props.restitution,
+                    );
+                    obj.physics_handle = Some(h);
+                }
             }
         }
     }
 
-<<<<<<< Updated upstream
-    pub fn run(mut self) {
+    pub fn run(&mut self) {
         println!("[Engine] Starting event loop");
         let event_loop = EventLoop::new().unwrap();
-        let _ = event_loop.run_app(&mut self);
-=======
-    pub fn run(&mut self) {
-        println!("[Engine] Starting GLFW");
-        let mut window = CustomWindow::new(&self.settings);
-        let mut renderer = Renderer::new(&window, self.settings.render_mode == RenderMode::Heavy, self.settings.aa_type, self.settings.thermal);
-        renderer.set_background(self.settings.background);
-        println!("[Engine] Window + Vulkan ready");
-
-        // Load scene texture if specified
-        if let Some(ref tex_path) = self.settings.texture.clone() {
-            let path = std::path::Path::new(tex_path);
-            let full_path = if path.is_absolute() {
-                tex_path.clone()
-            } else {
-                let base = std::env::current_dir().unwrap_or_default();
-                base.join(tex_path).to_string_lossy().to_string()
-            };
-            renderer.load_texture(&full_path);
-        }
-
-        while !window.should_close() {
-            window.poll_events();
-            if window.input.is_key_pressed(Key::Escape) {
-                window.set_should_close(true);
-            }
-            self.tick(&mut window, &mut renderer);
-        }
-
-        renderer.cleanup();
->>>>>>> Stashed changes
+        let _ = event_loop.run_app(self);
     }
 
     fn render_frame(&mut self) {
-        let Some(window) = self.window.as_mut() else { return };
-        let Some(renderer) = self.renderer.as_mut() else { return };
+        let Some(mut window) = self.window.take() else { return };
+        let Some(mut renderer) = self.renderer.take() else { self.window = Some(window); return };
 
         window.time.update();
         let speed = 5.0 * window.time.delta();
@@ -273,15 +240,17 @@ impl Engine {
         }
 
         let dt = window.time.delta();
-<<<<<<< Updated upstream
+        self.check_reload(Duration::from_secs_f32(dt));
+
         for object in self.scene.get_objects_mut() {
             if object.is_animated {
                 let an = object.anim_name.clone();
                 self.animator.apply(&mut object.transform, &an, dt);
                 if let Some(c) = self.animator.get_current_color(&an) {
                     object.color = c;
-=======
-        self.check_reload(Duration::from_secs_f32(dt));
+                }
+            }
+        }
 
         if let Some(physics) = self.physics.as_mut() {
             physics.step();
@@ -289,31 +258,27 @@ impl Engine {
                 if let Some(handle) = object.physics_handle {
                     let pos = physics.get_body_pos(handle);
                     object.transform.set_position(pos.x, pos.y, pos.z);
->>>>>>> Stashed changes
                 }
             }
         }
 
-        // Step physics and sync positions
-        self.physics.step();
-        let mut body_idx = 0;
-        for obj in self.scene.get_objects_mut() {
-            if body_idx >= self.body_handles.len() { break; }
-            if obj.physics.is_some() {
-                let h = self.body_handles[body_idx];
-                let p = self.physics.get_body_pos(h);
-                println!("[Physics] Body {} pos: y={}", body_idx, p.y);
-                obj.transform.set_position(p.x, p.y, p.z);
-                body_idx += 1;
-            }
-        }
-
-<<<<<<< Updated upstream
-        renderer.render(&self.scene, window.width, window.height);
-=======
-        renderer.render(&self.scene, window.fb_width, window.fb_height, hover, dt);
->>>>>>> Stashed changes
+        let ui_layout = crate::render::ui::layout(window.width as f32, window.height as f32);
+        let (nx, ny) = crate::render::ui::mouse_to_ndc(
+            window.width as f32,
+            window.height as f32,
+            window.input.mouse_x,
+            window.input.mouse_y,
+        );
+        let hover = match crate::render::ui::hit_test(&ui_layout, nx, ny) {
+            crate::render::ui::UiHit::Close => 2,
+            crate::render::ui::UiHit::Minimize => 1,
+            _ => 0,
+        };
+        renderer.render(&self.scene, window.width, window.height, hover, dt);
         window.input.reset_delta();
+
+        self.renderer = Some(renderer);
+        self.window = Some(window);
     }
 }
 
@@ -323,7 +288,12 @@ impl ApplicationHandler for Engine {
 
         let mut window = CustomWindow::new(&self.settings);
         window.init_window(elwt);
-        let renderer = Renderer::new(&window, self.settings.render_mode == RenderMode::Heavy);
+        let renderer = Renderer::new(
+            &window,
+            self.settings.render_mode == RenderMode::Heavy,
+            self.settings.aa_type,
+            self.settings.thermal,
+        );
 
         println!("[Engine] Window + Vulkan ready");
         self.window = Some(window);
@@ -333,6 +303,38 @@ impl ApplicationHandler for Engine {
     fn window_event(&mut self, elwt: &ActiveEventLoop, _: winit::window::WindowId, event: WindowEvent) {
         match event {
             WindowEvent::CloseRequested => elwt.exit(),
+            WindowEvent::RedrawRequested => self.render_frame(),
+            WindowEvent::MouseInput { state, button, .. } => {
+                if let Some(window) = self.window.as_mut() {
+                    window.handle_event(&event);
+                }
+                // Собственная панель окна: кнопки закрытия/сворачивания и перетаскивание.
+                if state == ElementState::Pressed && button == MouseButton::Left {
+                    if let Some(window) = self.window.as_ref() {
+                        let l = crate::render::ui::layout(window.width as f32, window.height as f32);
+                        let (nx, ny) = crate::render::ui::mouse_to_ndc(
+                            window.width as f32,
+                            window.height as f32,
+                            window.input.mouse_x,
+                            window.input.mouse_y,
+                        );
+                        match crate::render::ui::hit_test(&l, nx, ny) {
+                            crate::render::ui::UiHit::Close => elwt.exit(),
+                            crate::render::ui::UiHit::Minimize => {
+                                if let Some(raw) = window.raw.as_ref() {
+                                    raw.set_minimized(true);
+                                }
+                            }
+                            crate::render::ui::UiHit::Panel => {
+                                if let Some(raw) = window.raw.as_ref() {
+                                    let _ = raw.drag_window();
+                                }
+                            }
+                            crate::render::ui::UiHit::None => {}
+                        }
+                    }
+                }
+            }
             _ => {
                 if let Some(window) = self.window.as_mut() {
                     window.handle_event(&event);
@@ -342,6 +344,13 @@ impl ApplicationHandler for Engine {
     }
 
     fn about_to_wait(&mut self, _: &ActiveEventLoop) {
-        self.render_frame();
+        // Непрерывный рендер: просим следующий кадр у окна. Сама отрисовка
+        // происходит в WindowEvent::RedrawRequested, темп задаёт композитор
+        // (present-mode FIFO синхронизирован с вертикальной развёрткой).
+        if let Some(window) = self.window.as_ref() {
+            if let Some(raw) = window.raw.as_ref() {
+                raw.request_redraw();
+            }
+        }
     }
 }

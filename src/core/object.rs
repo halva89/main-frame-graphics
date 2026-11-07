@@ -3,11 +3,8 @@ use crate::render::mesh::Mesh;
 use crate::scene_parser::SceneObject;
 use crate::types::Color;
 use crate::physics::PhysicsProps;
-<<<<<<< Updated upstream
-=======
 use crate::math::Vec3;
 use rapier3d::dynamics::RigidBodyHandle;
->>>>>>> Stashed changes
 
 // Локальный (до трансформации) AABB меша. Пересчитывается по vertices один раз,
 // при создании объекта; в мировые координаты переводится каждый кадр в рендере.
@@ -35,46 +32,6 @@ pub struct Object {
     pub name: String,
     pub anim_name: String,
     pub physics: Option<PhysicsProps>,
-<<<<<<< Updated upstream
-}
-
-impl Object {
-    pub fn from(scene_obj: SceneObject) -> Self {
-        match scene_obj {
-            SceneObject::Static(mesh, position, phys) => {
-                let color = mesh.color;
-                let mut transform = Transform::default();
-                transform.set_position(position.x, position.y, position.z);
-                Self {
-                    mesh,
-                    transform,
-                    is_animated: false,
-                    color,
-                    name: String::from("Static"),
-                    anim_name: String::new(),
-                    physics: Some(phys),
-                }
-            }
-            SceneObject::Animated(animated_mesh) => {
-                let color = if !animated_mesh.keyframes.is_empty() {
-                    animated_mesh.keyframes[0].color
-                } else {
-                    Color::white()
-                };
-                let anim_name = animated_mesh.name.clone();
-                Self {
-                    mesh: Mesh::from_animated(animated_mesh),
-                    transform: Transform::default(),
-                    is_animated: true,
-                    color,
-                    name: String::from("Animated"),
-                    anim_name: String::new(),
-                    physics: None,
-                }
-            }
-        }
-    }
-=======
     pub physics_handle: Option<RigidBodyHandle>,
     // Локальный AABB для culling'а (view-frustum + occlusion)
     pub aabb_min: Vec3,
@@ -84,7 +41,6 @@ impl Object {
 }
 
 impl Object {
->>>>>>> Stashed changes
     pub fn new(mesh: Mesh, transform: Transform) -> Self {
         let (aabb_min, aabb_max) = mesh_aabb(&mesh.vertices);
         Self {
@@ -95,8 +51,6 @@ impl Object {
             name: String::from("Object"),
             anim_name: String::new(),
             physics: None,
-<<<<<<< Updated upstream
-=======
             physics_handle: None,
             aabb_min,
             aabb_max,
@@ -120,7 +74,6 @@ impl Object {
                     color,
                     name: String::from("Static"),
                     anim_name: String::new(),
-                    anim_time: 0.0,
                     physics: phys,
                     physics_handle: None,
                     aabb_min,
@@ -144,7 +97,6 @@ impl Object {
                     color,
                     name: String::from("Animated"),
                     anim_name,
-                    anim_time: 0.0,
                     physics: None,
                     physics_handle: None,
                     aabb_min,
@@ -152,7 +104,6 @@ impl Object {
                     temp,
                 }
             }
->>>>>>> Stashed changes
         }
     }
 

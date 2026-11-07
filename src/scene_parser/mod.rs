@@ -11,23 +11,14 @@ use crate::render::mesh::Mesh;
 use crate::animation::AnimatedMesh;
 use crate::types::Color;
 use crate::math::Vec3;
-<<<<<<< Updated upstream
-=======
 use crate::physics::PhysicsProps;
 use crate::render::mesh::TextureMode;
->>>>>>> Stashed changes
 use std::fs;
 use crate::scene_parser::mesh_loader::load_obj;
-use crate::physics::PhysicsProps;
 
 pub enum SceneObject {
-<<<<<<< Updated upstream
-    Static(Mesh, Vec3, PhysicsProps),
-    Animated(AnimatedMesh),
-=======
     Static(Mesh, Vec3, Vec3, Vec3, Option<PhysicsProps>, f32),
     Animated(AnimatedMesh, f32),
->>>>>>> Stashed changes
 }
 
 pub fn load_scene(path: &str) -> (SceneSettings, Vec<SceneObject>) {
@@ -137,14 +128,10 @@ pub fn load_scene(path: &str) -> (SceneSettings, Vec<SceneObject>) {
         }
 
         let pos = pending_pos.take().unwrap_or(Vec3::zero());
-<<<<<<< Updated upstream
-        let phys = pending_phys.take().unwrap_or(PhysicsProps::new());
-=======
         let rot = pending_rot.take().unwrap_or(Vec3::zero());
         let scale = pending_scale.take().unwrap_or(Vec3::one());
         let phys = pending_phys.take();
         let temp = pending_temp.take().unwrap_or(0.0);
->>>>>>> Stashed changes
         let shape = line;
 
         if shape == "cube" {
@@ -187,40 +174,7 @@ pub fn load_scene(path: &str) -> (SceneSettings, Vec<SceneObject>) {
             continue;
         }
 
-<<<<<<< Updated upstream
-        if shape.starts_with("mesh") || shape == "mesh" {
-            let path = shape.strip_prefix("mesh").unwrap_or("").trim().trim_matches('"');
-            if path.is_empty() && i + 1 < lines.len() {
-                let p = lines[i + 1].trim().trim_matches('"');
-                i += 1;
-                if let Some(loaded) = load_obj(p) {
-                    let mut m = loaded.mesh;
-                    if i + 1 < lines.len() {
-                        let c = parse_color(lines[i + 1]);
-                        m.color = c;
-                        i += 1;
-                    }
-                    objects.push(SceneObject::Static(m, pos, phys.clone()));
-                }
-            } else if !path.is_empty() {
-                if let Some(loaded) = load_obj(path) {
-                    let mut m = loaded.mesh;
-                    if i + 1 < lines.len() {
-                        let c = parse_color(lines[i + 1]);
-                        m.color = c;
-                        i += 1;
-                    }
-                    objects.push(SceneObject::Static(m, pos, phys.clone()));
-                }
-            }
-            i += 1;
-            continue;
-        }
-
-        if let Some(obj) = parse_static(line, &lines, &mut i, pos, phys) {
-=======
         if let Some(obj) = parse_static(line, &lines, &mut i, pos, rot, scale, phys, temp) {
->>>>>>> Stashed changes
             objects.push(obj);
             continue;
         }

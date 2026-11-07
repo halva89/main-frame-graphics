@@ -3,6 +3,8 @@ use crate::animation::Keyframe;
 use crate::scene_parser::SceneObject;
 use crate::types::Color;
 use crate::math::Vec3;
+use super::parse_color;
+use crate::scene_parser::mesh_loader::load_obj;
 
 pub fn parse_animated(lines: &[&str], i: &mut usize, temp: f32) -> Option<SceneObject> {
     let line = lines[*i].trim();
@@ -13,8 +15,6 @@ pub fn parse_animated(lines: &[&str], i: &mut usize, temp: f32) -> Option<SceneO
 
     let parts: Vec<&str> = line.split_whitespace().collect();
     let shape_type = if parts.len() >= 2 { parts[1] } else { "triangle" };
-<<<<<<< Updated upstream
-=======
     let mesh_path = if shape_type == "mesh" && parts.len() >= 3 {
         Some(parts[2].trim_matches('"').to_string())
     } else {
@@ -26,7 +26,6 @@ pub fn parse_animated(lines: &[&str], i: &mut usize, temp: f32) -> Option<SceneO
     } else {
         None
     };
->>>>>>> Stashed changes
 
     let mut keyframes = Vec::new();
     *i += 1;
@@ -110,8 +109,6 @@ pub fn parse_animated(lines: &[&str], i: &mut usize, temp: f32) -> Option<SceneO
                 mesh.indices.push(next);
             }
         }
-<<<<<<< Updated upstream
-=======
         "cube" => {
             let c = crate::render::mesh::Mesh::cube(1.0);
             mesh.vertices = c.vertices;
@@ -138,7 +135,6 @@ pub fn parse_animated(lines: &[&str], i: &mut usize, temp: f32) -> Option<SceneO
                 mesh.normals = vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0];
             }
         }
->>>>>>> Stashed changes
         _ => {
             mesh.vertices = vec![-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0];
             mesh.indices = vec![0, 1, 2];
@@ -149,18 +145,6 @@ pub fn parse_animated(lines: &[&str], i: &mut usize, temp: f32) -> Option<SceneO
     Some(SceneObject::Animated(mesh, temp))
 }
 
-<<<<<<< Updated upstream
-fn parse_color(line: &str) -> Color {
-    let parts: Vec<&str> = line.split_whitespace().collect();
-    if parts.len() >= 3 {
-        Color::new(
-            parts[0].parse().unwrap_or(1.0),
-            parts[1].parse().unwrap_or(1.0),
-            parts[2].parse().unwrap_or(1.0),
-        )
-    } else {
-        Color::white()
-=======
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -279,6 +263,5 @@ mod tests {
         let SceneObject::Animated(anim, _) = obj else { panic!() };
         // Default fallback is a 2D triangle: 3 vertices x 3 coords
         assert_eq!(anim.vertices.len(), 9, "unknown shape falls back to 2D triangle");
->>>>>>> Stashed changes
     }
 }

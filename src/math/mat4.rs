@@ -122,7 +122,8 @@ impl Mat4 {
             data: [
                 [2.0 / (right - left), 0.0, 0.0, -(right + left) / (right - left)],
                 [0.0, 2.0 / (top - bottom), 0.0, -(top + bottom) / (top - bottom)],
-                [0.0, 0.0, -2.0 / (far - near), -(far + near) / (far - near)],
+                // Vulkan: глубина в диапазоне 0..1 (не -1..1, как в OpenGL).
+                [0.0, 0.0, -1.0 / (far - near), -near / (far - near)],
                 [0.0, 0.0, 0.0, 1.0],
             ],
         }
@@ -133,7 +134,10 @@ impl Mat4 {
         let tan_half_fov = (fov / 2.0).tan();
         let mut result = Self::zero();
         result.data[0][0] = 1.0 / (aspect * tan_half_fov);
-        result.data[1][1] = 1.0 / tan_half_fov;
+        // Vulkan: NDC Y направлен вниз (в отличие от OpenGL), поэтому ось Y
+        // инвертируется здесь, а не во вьюпорте. Матрица используется и для
+        // пасса теней, так что карта теней остаётся согласованной с выборкой.
+        result.data[1][1] = -1.0 / tan_half_fov;
         result.data[2][2] = far / (near - far);
         result.data[2][3] = -(far * near) / (far - near);
         result.data[3][2] = -1.0;

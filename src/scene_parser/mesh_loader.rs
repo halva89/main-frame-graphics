@@ -38,13 +38,6 @@ pub fn load_obj(path: &str) -> Option<LoadedMesh> {
             }
             "f" => {
                 let mut face_indices: Vec<u32> = Vec::new();
-<<<<<<< Updated upstream
-                for i in 1..parts.len() {
-                    let idx_str = parts[i].split('/').next().unwrap_or("");
-                    if let Ok(idx) = idx_str.parse::<u32>() {
-                        face_indices.push(idx.wrapping_sub(1));
-                    }
-=======
                 let mut face_uvs: Vec<u32> = Vec::new();
                 for i in 1..parts.len() {
                     let sub: Vec<&str> = parts[i].split('/').collect();
@@ -56,7 +49,6 @@ pub fn load_obj(path: &str) -> Option<LoadedMesh> {
                             face_uvs.push(idx.wrapping_sub(1));
                         }
                     }
->>>>>>> Stashed changes
                 }
                 if face_indices.len() >= 3 {
                     let first = face_indices[0];
@@ -64,8 +56,6 @@ pub fn load_obj(path: &str) -> Option<LoadedMesh> {
                         ind_temp.push(first);
                         ind_temp.push(face_indices[i]);
                         ind_temp.push(face_indices[i + 1]);
-<<<<<<< Updated upstream
-=======
                     }
                 }
                 if face_uvs.len() >= 3 {
@@ -74,7 +64,6 @@ pub fn load_obj(path: &str) -> Option<LoadedMesh> {
                         uv_ind.push(first);
                         uv_ind.push(face_uvs[i]);
                         uv_ind.push(face_uvs[i + 1]);
->>>>>>> Stashed changes
                     }
                 }
             }

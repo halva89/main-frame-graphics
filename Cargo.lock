@@ -1044,14 +1044,13 @@ dependencies = [
  "ash",
  "ash-window",
  "env_logger",
- "glfw",
  "image",
  "log",
  "nalgebra",
  "rapier3d",
  "raw-window-handle",
  "rayon",
- "windows-sys 0.52.0",
+ "winit",
 ]
 
 [[package]]
@@ -2159,7 +2158,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ed6a63f02c8539c91a8685a86f4099661ba3da017932f6ebbea6de3f0fa7c90"
 
 [[package]]
-<<<<<<< Updated upstream
 name = "smithay-client-toolkit"
 version = "0.19.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2194,24 +2192,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "snow_graphics"
-version = "0.1.0"
-dependencies = [
- "ash",
- "ash-window",
- "env_logger",
- "image",
- "log",
- "nalgebra",
- "rapier3d",
- "raw-window-handle",
- "rayon",
- "winit",
-]
-
-[[package]]
-=======
->>>>>>> Stashed changes
 name = "spade"
 version = "2.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

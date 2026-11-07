@@ -147,35 +147,13 @@ pub struct VulkanContext {
     pub pipeline_layout: vk::PipelineLayout,
     pub descriptor_set_layout: vk::DescriptorSetLayout,
     pub descriptor_pool: vk::DescriptorPool,
-<<<<<<< Updated upstream
-    pub descriptor_set: vk::DescriptorSet,
-=======
     pub descriptor_set_scene: vk::DescriptorSet,
     pub descriptor_set_ov: vk::DescriptorSet,
     pub descriptor_set_shadow: vk::DescriptorSet,
->>>>>>> Stashed changes
     pub framebuffers: Vec<vk::Framebuffer>,
     pub command_pool: vk::CommandPool,
     pub command_buffers: Vec<vk::CommandBuffer>,
     pub image_available_semaphore: vk::Semaphore,
-<<<<<<< Updated upstream
-    pub render_finished_semaphore: vk::Semaphore,
-    pub fence: vk::Fence,
-    pub vertex_buffer: vk::Buffer,
-    pub vertex_buffer_memory: vk::DeviceMemory,
-    pub index_buffer: vk::Buffer,
-    pub index_buffer_memory: vk::DeviceMemory,
-    pub uniform_buffer: vk::Buffer,
-    pub uniform_buffer_memory: vk::DeviceMemory,
-    pub vertex_count: u32,
-    pub index_count: u32,
-    pub current_buffer_size: u64,
-    pub current_index_buffer_size: u64,
-    pub uniforms: Uniforms,
-    pub eye: Vec3,
-    pub target: Vec3,
-    pub use_perspective: bool,
-=======
     pub render_finished_semaphore: vk::Semaphore, pub fence: vk::Fence,
     pub vertex_buffer: vk::Buffer, pub vertex_buffer_memory: vk::DeviceMemory,
     pub index_buffer: vk::Buffer, pub index_buffer_memory: vk::DeviceMemory,
@@ -191,25 +169,10 @@ pub struct VulkanContext {
     pub line_width: f32,
     pub uniforms: Uniforms, pub uniforms_ov: Uniforms,
     pub eye: Vec3, pub target: Vec3,
->>>>>>> Stashed changes
     pub depth_format: vk::Format,
     pub depth_image: vk::Image,
     pub depth_image_memory: vk::DeviceMemory,
     pub depth_image_view: vk::ImageView,
-<<<<<<< Updated upstream
-    current_image_index: u32,
-    window_width: u32,
-    window_height: u32,
-}
-
-impl VulkanContext {
-    pub fn new(window: &CustomWindow, prefer_discrete: bool) -> Self {
-        println!("[Vulkan] Starting initialization...");
-
-        let entry = unsafe { Entry::load() }.expect("Failed to load Vulkan");
-
-        let app_name = CString::new("Snow Graphics System").unwrap();
-=======
     pub shadow_render_pass: vk::RenderPass,
     pub shadow_map_size: u32,
     pub shadow_map: vk::Image, pub shadow_map_memory: vk::DeviceMemory,
@@ -242,6 +205,7 @@ impl VulkanContext {
     current_image_index: u32, window_width: u32, window_height: u32, wireframe: bool,
     thermal_mode: bool,
     additive_pipeline: vk::Pipeline,
+    ui_pipeline: vk::Pipeline,
     glow_tex: Option<(vk::Image, vk::DeviceMemory, vk::ImageView, vk::Sampler, vk::DescriptorSet)>,
     glow_debug_done: bool,
     heat_state: Vec<f32>,
@@ -252,7 +216,6 @@ impl VulkanContext {
         println!("[Vulkan] Starting init... AA = {:?}", aa);
         let entry = unsafe { Entry::load() }.unwrap();
         let app_name = CString::new("Snow").unwrap();
->>>>>>> Stashed changes
         let app_info = vk::ApplicationInfo::default()
             .application_name(&app_name)
             .application_version(vk::make_api_version(0, 1, 0, 0))
@@ -274,133 +237,39 @@ impl VulkanContext {
             ash_window::create_surface(&entry, &instance, display_handle, window.get_raw_window_handle(), None)
         }.unwrap();
 
-        let physical_devices = unsafe { instance.enumerate_physical_devices() }.unwrap();
-        let has_discrete = physical_devices.iter().any(|&d| {
+        let pds = unsafe { instance.enumerate_physical_devices() }.unwrap();
+        let has_discrete = pds.iter().any(|&d| {
             unsafe { instance.get_physical_device_properties(d) }.device_type == vk::PhysicalDeviceType::DISCRETE_GPU
         });
-        let has_integrated = physical_devices.iter().any(|&d| {
+        let has_integrated = pds.iter().any(|&d| {
             unsafe { instance.get_physical_device_properties(d) }.device_type == vk::PhysicalDeviceType::INTEGRATED_GPU
         });
 
-        let physical_device = if prefer_discrete && has_discrete {
+        let pd = if prefer_discrete && has_discrete {
             // Heavy mode: prefer discrete GPU
-            physical_devices.iter()
+            pds.iter()
                 .find(|&&d| unsafe { instance.get_physical_device_properties(d) }.device_type == vk::PhysicalDeviceType::DISCRETE_GPU)
                 .copied()
-                .unwrap_or(physical_devices[0])
+                .unwrap_or(pds[0])
         } else if !prefer_discrete && has_integrated {
-<<<<<<< Updated upstream
-            // Light mode: prefer integrated GPU
-            physical_devices.iter()
-                .find(|&&d| unsafe { instance.get_physical_device_properties(d) }.device_type == vk::PhysicalDeviceType::INTEGRATED_GPU)
-                .copied()
-                .unwrap_or(physical_devices[0])
-        } else {
-            // Fallback: first available
-            physical_devices[0]
-        };
-
-        let qfi = Self::find_queue_family(&instance, physical_device, surface, &surface_loader)
-            .expect("No suitable queue family");
-
-=======
             *pds.iter().find(|&&d| unsafe { instance.get_physical_device_properties(d) }.device_type == vk::PhysicalDeviceType::INTEGRATED_GPU).unwrap_or(&pds[0])
         } else { pds[0] };
+        let sfl = surface_loader;
         let pname = unsafe { instance.get_physical_device_properties(pd) }.device_name;
         let cstr = unsafe { std::ffi::CStr::from_ptr(pname.as_ptr()) }.to_string_lossy().into_owned();
         println!("[Vulkan] Device: {}", cstr);
         let qfi = Self::find_qf(&instance, pd, surface, &sfl).unwrap();
->>>>>>> Stashed changes
         let dev_ext = [CString::new("VK_KHR_swapchain").unwrap()];
         let ext_ptrs: Vec<*const i8> = dev_ext.iter().map(|c| c.as_ptr()).collect();
 
         let qp = 1.0f32;
-<<<<<<< Updated upstream
-        let qci = vk::DeviceQueueCreateInfo::default()
-            .queue_family_index(qfi)
-            .queue_priorities(std::slice::from_ref(&qp));
-
-        let dci = vk::DeviceCreateInfo::default()
-            .queue_create_infos(std::slice::from_ref(&qci))
-            .enabled_extension_names(&ext_ptrs);
-
-        let device = unsafe { instance.create_device(physical_device, &dci, None) }.unwrap();
-=======
         let qci = vk::DeviceQueueCreateInfo::default().queue_family_index(qfi).queue_priorities(std::slice::from_ref(&qp));
         let dci = vk::DeviceCreateInfo::default().queue_create_infos(std::slice::from_ref(&qci)).enabled_extension_names(&ext_ptrs);
         let device = unsafe { instance.create_device(pd, &dci, None) }.unwrap();
->>>>>>> Stashed changes
         let queue = unsafe { device.get_device_queue(qfi, 0) };
 
         let sl = swapchain::Device::new(&instance, &device);
-<<<<<<< Updated upstream
-        let (swapchain, fmt, extent, images) =
-            Self::create_swapchain(physical_device, &sl, surface, &surface_loader, window);
-
-        let image_views: Vec<_> = images.iter().map(|&img| {
-            unsafe {
-                device.create_image_view(
-                    &vk::ImageViewCreateInfo::default()
-                        .image(img).view_type(vk::ImageViewType::TYPE_2D).format(fmt)
-                        .subresource_range(vk::ImageSubresourceRange::default()
-                            .aspect_mask(vk::ImageAspectFlags::COLOR)
-                            .base_mip_level(0).level_count(1)
-                            .base_array_layer(0).layer_count(1)),
-                    None,
-                )
-            }.unwrap()
-        }).collect();
-
-        let (dimg, dimg_mem, dimg_view, dfmt) =
-            Self::create_depth(&device, &instance, physical_device, extent.width, extent.height);
-
-        let rp = Self::create_render_pass(&device, fmt, dfmt);
-
-        let (dsl, dpool, dset) = Self::create_descriptors(&device);
-
-        let pll = unsafe {
-            device.create_pipeline_layout(
-                &vk::PipelineLayoutCreateInfo::default().set_layouts(std::slice::from_ref(&dsl)),
-                None,
-            )
-        }.unwrap();
-
-        let pipeline = Pipeline::new_with_layout(&device, rp, extent, pll);
-
-        let fbs: Vec<_> = image_views.iter().map(|&view| {
-            let att = [view, dimg_view];
-            unsafe {
-                device.create_framebuffer(
-                    &vk::FramebufferCreateInfo::default()
-                        .render_pass(rp).attachments(&att)
-                        .width(extent.width).height(extent.height).layers(1),
-                    None,
-                )
-            }.unwrap()
-        }).collect();
-
-        let cpool = unsafe {
-            device.create_command_pool(
-                &vk::CommandPoolCreateInfo::default().queue_family_index(qfi),
-                None,
-            )
-        }.unwrap();
-
-        let cbs = unsafe {
-            device.allocate_command_buffers(
-                &vk::CommandBufferAllocateInfo::default()
-                    .command_pool(cpool).level(vk::CommandBufferLevel::PRIMARY)
-                    .command_buffer_count(fbs.len() as u32),
-            )
-        }.unwrap();
-
-        let dummies: Vec<f32> = vec![0.0; 6];
-        let dummyi: Vec<u32> = vec![0, 1, 2];
-        let (vb, vbm, vc) = Self::create_vb(&device, &instance, physical_device, &dummies);
-        let (ib, ibm, ic) = Self::create_ib(&device, &instance, physical_device, &dummyi);
-
-=======
-        let (sc, fmt, ext, imgs) = match Self::create_sc(pd, &sl, surface, &sfl, window.width, window.height) {
+        let (sc, fmt, ext, imgs) = match Self::create_swapchain(pd, &sl, surface, &sfl, window.width, window.height) {
             Some(v) => v, None => { panic!("Failed to create swapchain"); }
         };
         let ivs: Vec<_> = imgs.iter().map(|&img| unsafe { device.create_image_view(
@@ -471,25 +340,9 @@ impl VulkanContext {
         let (vb, vbm, vc) = Self::create_vb(&device, &instance, pd, &dummies);
         let (ib, ibm, ic) = Self::create_ib(&device, &instance, pd, &dummyi);
         let aspect = ext.width as f32 / ext.height as f32;
->>>>>>> Stashed changes
         let mut ubo = Uniforms::new();
-        let aspect = extent.width as f32 / extent.height as f32;
+        let aspect = ext.width as f32 / ext.height as f32;
         ubo.projection = Mat4::perspective(45.0_f32.to_radians(), aspect, 0.1, 100.0);
-<<<<<<< Updated upstream
-        ubo.view = Mat4::identity();
-        ubo.model = Mat4::identity();
-
-        let (ub, ubm) = Self::create_ub(&device, &instance, physical_device, &ubo);
-
-        unsafe {
-            let bi = vk::DescriptorBufferInfo::default()
-                .buffer(ub).offset(0).range(std::mem::size_of::<Uniforms>() as u64);
-            let w = vk::WriteDescriptorSet::default()
-                .dst_set(dset).dst_binding(0).dst_array_element(0)
-                .descriptor_type(vk::DescriptorType::UNIFORM_BUFFER)
-                .buffer_info(std::slice::from_ref(&bi));
-            device.update_descriptor_sets(std::slice::from_ref(&w), &[]);
-=======
         let (ub, ubm) = Self::create_ub(&device, &instance, pd, &ubo);
         let mut ubo_ov = Uniforms::new();
         ubo_ov.projection = Mat4::orthographic(-1.0, 1.0, -1.0, 1.0, 0.0, 10.0);
@@ -499,6 +352,7 @@ impl VulkanContext {
         let (ub_shadow, ubm_shadow) = Self::create_ub(&device, &instance, pd, &ubo);
 
         // Аддитивный пайплайн для сияния (тепловизор): глоу-квады как billboard.
+        let ui_pipeline = Pipeline::create_ui(&device, rp, pll, samples);
         let additive_handle = Self::create_additive_pipeline(&device, rp, pll, samples);
         let (glow_img, glow_mem, glow_view, glow_sampler, glow_ds): (Option<vk::Image>, Option<vk::DeviceMemory>, Option<vk::ImageView>, Option<vk::Sampler>, Option<vk::DescriptorSet>) =
             if thermal {
@@ -560,7 +414,6 @@ impl VulkanContext {
             present_rp = Self::create_present_rp(&device, fmt);
             present_fbs = ivs.iter().map(|&view| unsafe { device.create_framebuffer(&vk::FramebufferCreateInfo::default().render_pass(present_rp).attachments(&[view]).width(ext.width).height(ext.height).layers(1), None) }.unwrap()).collect();
             present_pipeline = Self::create_fxaa_pipeline(&device, present_rp, present_layout);
->>>>>>> Stashed changes
         }
 
         let sem = vk::SemaphoreCreateInfo::default();
@@ -568,17 +421,6 @@ impl VulkanContext {
         let ias = unsafe { device.create_semaphore(&sem, None) }.unwrap();
         let rfs = unsafe { device.create_semaphore(&sem, None) }.unwrap();
         let fen = unsafe { device.create_fence(&fi, None) }.unwrap();
-<<<<<<< Updated upstream
-
-        Self {
-            entry, instance, surface, surface_loader, device, physical_device,
-            queue_family_index: qfi, queue,
-            swapchain_loader: sl, swapchain, swapchain_images: images,
-            swapchain_image_views: image_views, swapchain_format: fmt,
-            swapchain_extent: extent, render_pass: rp,
-            pipeline, pipeline_layout: pll,
-            descriptor_set_layout: dsl, descriptor_pool: dpool, descriptor_set: dset,
-=======
         let (evb, evbm, evc) = Self::create_vb(&device, &instance, pd, &[0.0; 11]);
         let (eib, eibm, eic) = Self::create_ib(&device, &instance, pd, &[0]);
         let pverts: [f32; 6] = [-1.0, -1.0, 3.0, -1.0, -1.0, 3.0];
@@ -590,46 +432,23 @@ impl VulkanContext {
             swapchain_extent: ext, render_pass: rp, pipeline, pipeline_layout: pll,
             descriptor_set_layout: dsl, descriptor_pool: dpool,
             descriptor_set_scene: dset, descriptor_set_ov: dset2, descriptor_set_shadow: dset_shadow,
->>>>>>> Stashed changes
             framebuffers: fbs, command_pool: cpool, command_buffers: cbs,
             image_available_semaphore: ias, render_finished_semaphore: rfs,
             fence: fen,
             vertex_buffer: vb, vertex_buffer_memory: vbm, index_buffer: ib,
-<<<<<<< Updated upstream
-            index_buffer_memory: ibm, uniform_buffer: ub, uniform_buffer_memory: ubm,
-            vertex_count: vc, index_count: ic,
-=======
             index_buffer_memory: ibm, edge_vertex_buffer: evb, edge_vertex_buffer_memory: evbm,
             edge_index_buffer: eib, edge_index_buffer_memory: eibm,
             uniform_buffer: ub, uniform_buffer_memory: ubm,
             uniform_buffer_ov: ub2, uniform_buffer_ov_memory: ubm2,
             shadow_uniform_buffer: ub_shadow, shadow_uniform_buffer_memory: ubm_shadow,
             vertex_count: vc, index_count: ic, edge_vertex_count: evc, edge_index_count: eic,
->>>>>>> Stashed changes
             current_buffer_size: 0, current_index_buffer_size: 0,
-            uniforms: ubo,
+            current_edge_buffer_size: 0, current_edge_index_buffer_size: 0,
+            line_width: 2.0,
+            uniforms: ubo, uniforms_ov: ubo_ov,
             eye: Vec3::new(0.0, 0.0, 5.0), target: Vec3::zero(),
-            use_perspective: true,
             depth_format: dfmt, depth_image: dimg, depth_image_memory: dimg_mem,
             depth_image_view: dimg_view,
-<<<<<<< Updated upstream
-            current_image_index: 0,
-            window_width: extent.width,
-            window_height: extent.height,
-        }
-    }
-
-    fn find_queue_family(
-        instance: &Instance, pd: vk::PhysicalDevice, surface: vk::SurfaceKHR, sl: &surface::Instance,
-    ) -> Option<u32> {
-        let families = unsafe { instance.get_physical_device_queue_family_properties(pd) };
-        for (i, f) in families.iter().enumerate() {
-            if f.queue_flags.contains(vk::QueueFlags::GRAPHICS) {
-                if unsafe { sl.get_physical_device_surface_support(pd, i as u32, surface) }.unwrap_or(false) {
-                    return Some(i as u32);
-                }
-            }
-=======
             shadow_render_pass: smrp, shadow_map_size: sm_size,
             shadow_map: sm_map, shadow_map_memory: sm_mem,
             shadow_map_view: sm_view, shadow_map_sampler: sm_sampler,
@@ -660,6 +479,7 @@ impl VulkanContext {
             wireframe: false,
             thermal_mode: thermal,
             additive_pipeline: additive_handle,
+            ui_pipeline,
             glow_tex: if thermal {
                 Some((glow_img.unwrap(), glow_mem.unwrap(), glow_view.unwrap(), glow_sampler.unwrap(), glow_ds.unwrap()))
             } else { None },
@@ -733,8 +553,9 @@ impl VulkanContext {
             .color_write_mask(vk::ColorComponentFlags::RGBA);
         let color_blend = vk::PipelineColorBlendStateCreateInfo::default().attachments(std::slice::from_ref(&cba));
         let pinfo = vk::GraphicsPipelineCreateInfo::default().stages(&stages).vertex_input_state(&vertex_input).input_assembly_state(&input_assembly).viewport_state(&viewport_state).dynamic_state(&dynamic_state).rasterization_state(&rasterizer).multisample_state(&multisample).depth_stencil_state(&depth_stencil).color_blend_state(&color_blend).layout(layout).render_pass(render_pass).subpass(0);
+        let result = unsafe { device.create_graphics_pipelines(vk::PipelineCache::null(), std::slice::from_ref(&pinfo), None) };
         unsafe { device.destroy_shader_module(vm, None); device.destroy_shader_module(fm, None); }
-        match unsafe { device.create_graphics_pipelines(vk::PipelineCache::null(), std::slice::from_ref(&pinfo), None) } {
+        match result {
             Ok(p) => p[0],
             Err(e) => panic!("Failed to create additive pipeline: {:?}", e),
         }
@@ -819,26 +640,22 @@ impl VulkanContext {
         let qfs = unsafe { instance.get_physical_device_queue_family_properties(pd) };
         for (i, f) in qfs.iter().enumerate() {
             if f.queue_flags.contains(vk::QueueFlags::GRAPHICS) && unsafe { sfl.get_physical_device_surface_support(pd, i as u32, surface) }.unwrap_or(false) { return Some(i as u32); }
->>>>>>> Stashed changes
         }
         None
     }
 
     fn create_swapchain(
         pd: vk::PhysicalDevice, sl: &swapchain::Device,
-        surface: vk::SurfaceKHR, sfl: &surface::Instance, window: &CustomWindow,
-    ) -> (vk::SwapchainKHR, vk::Format, vk::Extent2D, Vec<vk::Image>) {
-        let caps = unsafe { sfl.get_physical_device_surface_capabilities(pd, surface) }.unwrap();
-<<<<<<< Updated upstream
-=======
+        surface: vk::SurfaceKHR, sfl: &surface::Instance, width: u32, height: u32,
+    ) -> Option<(vk::SwapchainKHR, vk::Format, vk::Extent2D, Vec<vk::Image>)> {
+        let caps = unsafe { sfl.get_physical_device_surface_capabilities(pd, surface) }.ok()?;
         if caps.current_extent.width == 0 || caps.current_extent.height == 0 { return None; }
->>>>>>> Stashed changes
         let formats = unsafe { sfl.get_physical_device_surface_formats(pd, surface) }.unwrap();
         let fmt = formats.iter().find(|f| {
             f.format == vk::Format::B8G8R8A8_SRGB || f.format == vk::Format::R8G8B8A8_SRGB
         }).unwrap_or(&formats[0]);
         let extent = match caps.current_extent {
-            vk::Extent2D { width: u32::MAX, .. } => vk::Extent2D { width: window.width, height: window.height },
+            vk::Extent2D { width: u32::MAX, .. } => vk::Extent2D { width, height },
             e => e,
         };
         let mut ic = caps.min_image_count + 1;
@@ -854,41 +671,9 @@ impl VulkanContext {
             .present_mode(vk::PresentModeKHR::FIFO).clipped(true);
         let sc = unsafe { sl.create_swapchain(&sci, None) }.unwrap();
         let imgs = unsafe { sl.get_swapchain_images(sc) }.unwrap();
-        (sc, fmt.format, extent, imgs)
+        Some((sc, fmt.format, extent, imgs))
     }
 
-<<<<<<< Updated upstream
-    fn find_format(
-        device: &Device, instance: &Instance, pd: vk::PhysicalDevice,
-        candidates: &[vk::Format], tiling: vk::ImageTiling, features: vk::FormatFeatureFlags,
-    ) -> Option<vk::Format> {
-        for &f in candidates {
-            let p = unsafe { instance.get_physical_device_format_properties(pd, f) };
-            let ok = match tiling {
-                vk::ImageTiling::LINEAR => p.linear_tiling_features,
-                _ => p.optimal_tiling_features,
-            };
-            if ok.contains(features) { return Some(f); }
-        }
-        None
-    }
-
-    fn create_depth(
-        device: &Device, instance: &Instance, pd: vk::PhysicalDevice,
-        w: u32, h: u32,
-    ) -> (vk::Image, vk::DeviceMemory, vk::ImageView, vk::Format) {
-        let df = Self::find_format(device, instance, pd,
-            &[vk::Format::D32_SFLOAT, vk::Format::D24_UNORM_S8_UINT],
-            vk::ImageTiling::OPTIMAL, vk::FormatFeatureFlags::DEPTH_STENCIL_ATTACHMENT,
-        ).unwrap();
-        let ii = vk::ImageCreateInfo::default()
-            .image_type(vk::ImageType::TYPE_2D).format(df)
-            .extent(vk::Extent3D { width: w, height: h, depth: 1 })
-            .mip_levels(1).array_layers(1).samples(vk::SampleCountFlags::TYPE_1)
-            .tiling(vk::ImageTiling::OPTIMAL)
-            .usage(vk::ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT)
-            .sharing_mode(vk::SharingMode::EXCLUSIVE);
-=======
     fn find_fmt(_device: &Device, instance: &Instance, pd: vk::PhysicalDevice, candidates: &[vk::Format], tiling: vk::ImageTiling, features: vk::FormatFeatureFlags) -> Option<vk::Format> {
         for &f in candidates { let p = unsafe { instance.get_physical_device_format_properties(pd, f) }; let ok = match tiling { vk::ImageTiling::LINEAR => p.linear_tiling_features, _ => p.optimal_tiling_features }; if ok.contains(features) { return Some(f); } } None
     }
@@ -938,7 +723,6 @@ impl VulkanContext {
     fn create_depth(device: &Device, instance: &Instance, pd: vk::PhysicalDevice, w: u32, h: u32, samples: u32) -> (vk::Image, vk::DeviceMemory, vk::ImageView, vk::Format) {
         let df = Self::find_fmt(device, instance, pd, &[vk::Format::D32_SFLOAT, vk::Format::D24_UNORM_S8_UINT], vk::ImageTiling::OPTIMAL, vk::FormatFeatureFlags::DEPTH_STENCIL_ATTACHMENT).unwrap();
         let ii = vk::ImageCreateInfo::default().image_type(vk::ImageType::TYPE_2D).format(df).extent(vk::Extent3D { width: w, height: h, depth: 1 }).mip_levels(1).array_layers(1).samples(samples_flags(samples)).tiling(vk::ImageTiling::OPTIMAL).usage(vk::ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT).sharing_mode(vk::SharingMode::EXCLUSIVE);
->>>>>>> Stashed changes
         let img = unsafe { device.create_image(&ii, None) }.unwrap();
         let mr = unsafe { device.get_image_memory_requirements(img) };
         let mt = Self::mt(instance, pd, mr.memory_type_bits, vk::MemoryPropertyFlags::DEVICE_LOCAL);
@@ -955,23 +739,6 @@ impl VulkanContext {
         (img, mem, view, df)
     }
 
-<<<<<<< Updated upstream
-    fn create_render_pass(device: &Device, fmt: vk::Format, dfmt: vk::Format) -> vk::RenderPass {
-        let ca = vk::AttachmentDescription::default()
-            .format(fmt).samples(vk::SampleCountFlags::TYPE_1)
-            .load_op(vk::AttachmentLoadOp::CLEAR).store_op(vk::AttachmentStoreOp::STORE)
-            .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE)
-            .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE)
-            .initial_layout(vk::ImageLayout::UNDEFINED)
-            .final_layout(vk::ImageLayout::PRESENT_SRC_KHR);
-        let da = vk::AttachmentDescription::default()
-            .format(dfmt).samples(vk::SampleCountFlags::TYPE_1)
-            .load_op(vk::AttachmentLoadOp::CLEAR).store_op(vk::AttachmentStoreOp::DONT_CARE)
-            .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE)
-            .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE)
-            .initial_layout(vk::ImageLayout::UNDEFINED)
-            .final_layout(vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-=======
     // MSAA цветовой таргет (источник resolve). single-таргет = сцена во FXAA.
     fn create_color_samples(device: &Device, instance: &Instance, pd: vk::PhysicalDevice, fmt: vk::Format, w: u32, h: u32, samples: u32, sampled: bool) -> (vk::Image, vk::DeviceMemory, vk::ImageView) {
         let usage = if samples > 1 {
@@ -993,7 +760,6 @@ impl VulkanContext {
     fn create_rp(device: &Device, fmt: vk::Format, dfmt: vk::Format) -> vk::RenderPass {
         let ca = vk::AttachmentDescription::default().format(fmt).samples(vk::SampleCountFlags::TYPE_1).load_op(vk::AttachmentLoadOp::CLEAR).store_op(vk::AttachmentStoreOp::STORE).stencil_load_op(vk::AttachmentLoadOp::DONT_CARE).stencil_store_op(vk::AttachmentStoreOp::DONT_CARE).initial_layout(vk::ImageLayout::UNDEFINED).final_layout(vk::ImageLayout::PRESENT_SRC_KHR);
         let da = vk::AttachmentDescription::default().format(dfmt).samples(vk::SampleCountFlags::TYPE_1).load_op(vk::AttachmentLoadOp::CLEAR).store_op(vk::AttachmentStoreOp::DONT_CARE).stencil_load_op(vk::AttachmentLoadOp::DONT_CARE).stencil_store_op(vk::AttachmentStoreOp::DONT_CARE).initial_layout(vk::ImageLayout::UNDEFINED).final_layout(vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
->>>>>>> Stashed changes
         let cr = vk::AttachmentReference::default().attachment(0).layout(vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL);
         let dr = vk::AttachmentReference::default().attachment(1).layout(vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
         let sp = vk::SubpassDescription::default()
@@ -1014,31 +780,6 @@ impl VulkanContext {
         }.unwrap()
     }
 
-<<<<<<< Updated upstream
-    fn create_descriptors(device: &Device) -> (vk::DescriptorSetLayout, vk::DescriptorPool, vk::DescriptorSet) {
-        let b = vk::DescriptorSetLayoutBinding::default()
-            .binding(0).descriptor_type(vk::DescriptorType::UNIFORM_BUFFER)
-            .descriptor_count(1).stage_flags(vk::ShaderStageFlags::VERTEX);
-        let l = unsafe {
-            device.create_descriptor_set_layout(
-                &vk::DescriptorSetLayoutCreateInfo::default().bindings(std::slice::from_ref(&b)),
-                None,
-            )
-        }.unwrap();
-        let ps = vk::DescriptorPoolSize::default().ty(vk::DescriptorType::UNIFORM_BUFFER).descriptor_count(1);
-        let p = unsafe {
-            device.create_descriptor_pool(
-                &vk::DescriptorPoolCreateInfo::default().max_sets(1).pool_sizes(std::slice::from_ref(&ps)),
-                None,
-            )
-        }.unwrap();
-        let s = unsafe {
-            device.allocate_descriptor_sets(
-                &vk::DescriptorSetAllocateInfo::default().descriptor_pool(p).set_layouts(std::slice::from_ref(&l)),
-            )
-        }.unwrap()[0];
-        (l, p, s)
-=======
     // Рендер-пасс сцены во FXAA: цветовой таргет = offscreen (финал SHADER_READ_ONLY).
     fn create_rp_fxaa(device: &Device, fmt: vk::Format, dfmt: vk::Format) -> vk::RenderPass {
         let ca = vk::AttachmentDescription::default().format(fmt).samples(vk::SampleCountFlags::TYPE_1).load_op(vk::AttachmentLoadOp::CLEAR).store_op(vk::AttachmentStoreOp::STORE).stencil_load_op(vk::AttachmentLoadOp::DONT_CARE).stencil_store_op(vk::AttachmentStoreOp::DONT_CARE).initial_layout(vk::ImageLayout::UNDEFINED).final_layout(vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL);
@@ -1103,8 +844,8 @@ impl VulkanContext {
         let cba = vk::PipelineColorBlendAttachmentState::default().color_write_mask(vk::ColorComponentFlags::RGBA).blend_enable(false);
         let cb = vk::PipelineColorBlendStateCreateInfo::default().attachments(std::slice::from_ref(&cba));
         let pinfo = vk::GraphicsPipelineCreateInfo::default().stages(&stages).vertex_input_state(&vis).input_assembly_state(&ia).viewport_state(&vps).dynamic_state(&dyn_state).rasterization_state(&ras).multisample_state(&ms).color_blend_state(&cb).layout(layout).render_pass(render_pass).subpass(0);
-        unsafe { device.destroy_shader_module(vm, None); device.destroy_shader_module(fm, None); }
         let pl = unsafe { device.create_graphics_pipelines(vk::PipelineCache::null(), std::slice::from_ref(&pinfo), None) }.unwrap();
+        unsafe { device.destroy_shader_module(vm, None); device.destroy_shader_module(fm, None); }
         if pl[0] != vk::Pipeline::null() {
             println!("[Vulkan] FXAA pipeline created");
         }
@@ -1127,7 +868,6 @@ impl VulkanContext {
         let layouts = [l, l, l];
         let sets = unsafe { device.allocate_descriptor_sets(&vk::DescriptorSetAllocateInfo::default().descriptor_pool(p).set_layouts(&layouts)) }.unwrap();
         (l, p, sets[0], sets[1], sets[2])
->>>>>>> Stashed changes
     }
 
     fn mt(
@@ -1208,20 +948,6 @@ impl VulkanContext {
         (b, m)
     }
 
-<<<<<<< Updated upstream
-    pub fn set_camera(&mut self, eye: Vec3, target: Vec3) {
-        self.eye = eye;
-        self.target = target;
-    }
-
-    fn update_ubo(&mut self) {
-        let sz = std::mem::size_of::<Uniforms>() as u64;
-        unsafe {
-            let p = self.device.map_memory(self.uniform_buffer_memory, 0, sz, vk::MemoryMapFlags::empty()).unwrap();
-            std::ptr::copy_nonoverlapping(&self.uniforms as *const _ as *const u8, p as *mut u8, sz as usize);
-            self.device.unmap_memory(self.uniform_buffer_memory);
-        }
-=======
     pub fn set_camera(&mut self, eye: Vec3, target: Vec3) { self.eye = eye; self.target = target; }
     pub fn set_wireframe(&mut self, on: bool) { self.wireframe = on; }
     pub fn set_thermal(&mut self, on: bool) { self.thermal_mode = on; }
@@ -1239,7 +965,6 @@ impl VulkanContext {
         if data.is_empty() { return; }
         let sz = data.len() as u64;
         unsafe { let p = self.device.map_memory(mem, 0, sz, vk::MemoryMapFlags::empty()).unwrap(); std::ptr::copy_nonoverlapping(data.as_ptr(), p as *mut u8, data.len()); self.device.unmap_memory(mem); }
->>>>>>> Stashed changes
     }
 
     fn rebuild_bufs(&mut self, verts: &[f32], idxs: &[u32]) {
@@ -1251,17 +976,6 @@ impl VulkanContext {
                 self.device.free_memory(self.vertex_buffer_memory, None);
             }
             let (vb, vm, vc) = Self::create_vb(&self.device, &self.instance, self.physical_device, verts);
-<<<<<<< Updated upstream
-            self.vertex_buffer = vb;
-            self.vertex_buffer_memory = vm;
-            self.vertex_count = vc;
-            self.current_buffer_size = vsz;
-        }
-        if isz != self.current_index_buffer_size {
-            unsafe {
-                self.device.destroy_buffer(self.index_buffer, None);
-                self.device.free_memory(self.index_buffer_memory, None);
-=======
             self.vertex_buffer = vb; self.vertex_buffer_memory = vm; self.vertex_count = vc; self.current_buffer_size = vsz;
         } else {
             let vert_bytes = unsafe { std::slice::from_raw_parts(verts.as_ptr() as *const u8, verts.len() * 4) };
@@ -1303,60 +1017,8 @@ impl VulkanContext {
         unsafe {
             if let Ok(caps) = self.surface_loader.get_physical_device_surface_capabilities(self.physical_device, self.surface) {
                 if caps.current_extent.width == 0 || caps.current_extent.height == 0 { return; }
->>>>>>> Stashed changes
             }
-            let (ib, im, ic) = Self::create_ib(&self.device, &self.instance, self.physical_device, idxs);
-            self.index_buffer = ib;
-            self.index_buffer_memory = im;
-            self.index_count = ic;
-            self.current_index_buffer_size = isz;
         }
-<<<<<<< Updated upstream
-    }
-
-    pub fn render_scene(&mut self, scene: &Scene, window_w: u32, window_h: u32) {
-        unsafe {
-            self.device.wait_for_fences(std::slice::from_ref(&self.fence), true, u64::MAX).unwrap();
-            self.device.reset_fences(std::slice::from_ref(&self.fence)).unwrap();
-        }
-
-        // Try to acquire, recreate swapchain if out-of-date
-        let image_index = match unsafe {
-            self.swapchain_loader.acquire_next_image(self.swapchain, u64::MAX, self.image_available_semaphore, self.fence)
-        } {
-            Ok((idx, _)) => idx,
-            Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => {
-                self.rebuild_swapchain(window_w, window_h);
-                return;
-            }
-            Err(_) => return,
-        };
-
-        // Wait for acquire to complete (fence was signaled when image was ready)
-        unsafe {
-            self.device.wait_for_fences(std::slice::from_ref(&self.fence), true, u64::MAX).unwrap();
-            self.device.reset_fences(std::slice::from_ref(&self.fence)).unwrap();
-        }
-
-        // Build vertex data
-        let mut all_v = Vec::new();
-        let mut all_i = Vec::new();
-
-        for obj in scene.get_objects() {
-            let m = &obj.mesh;
-            let vs = &m.vertices;
-            let is = &m.indices;
-            let c = obj.color.as_array();
-            let base = all_v.len() / 6;
-            for ch in vs.chunks(3) {
-                let tv = obj.transform.model.transform(&Vec3::new(ch[0], ch[1], ch[2]));
-                all_v.extend_from_slice(&[tv.x, tv.y, tv.z, c[0], c[1], c[2]]);
-            }
-            for &ix in is { all_i.push(ix + base as u32); }
-        }
-
-        if all_v.is_empty() || all_i.is_empty() { return; }
-=======
         unsafe { self.device.wait_for_fences(std::slice::from_ref(&self.fence), true, u64::MAX).unwrap(); self.device.reset_fences(std::slice::from_ref(&self.fence)).unwrap(); }
         if window_w != self.window_width || window_h != self.window_height {
             self.rebuild_swapchain(window_w, window_h);
@@ -1563,22 +1225,14 @@ let mut cx = vec![0.0f32; n]; let mut cy = vec![0.0f32; n]; let mut cz = vec![0.
         // Overlay (with dummy UV = 0,0)
         let w = self.swapchain_extent.width.max(1) as f32;
         let h = self.swapchain_extent.height.max(1) as f32;
-        let cx13 = 30.0 / w; let cy13 = 30.0 / h;
-        let btn_rx = 20.0 / w; let btn_ry = 20.0 / h;
-        let gap_r = 20.0 / w; let gap_v = 20.0 / h;
-        let pw_ = 80.0 / w;
-        let panel_right = 1.0 - gap_r;
-        let panel_left = panel_right - pw_;
-        let panel_top = 1.0 - gap_v;
-        let panel_bottom = -1.0 + gap_v;
-        let btn_sz_x = 56.0 / w; let btn_sz_y = 56.0 / h;
-        let btn_left = panel_left + 12.0 / w;
-        let btn_right = btn_left + btn_sz_x;
-        let btn_pad_b = 10.0 / h;
-        let gap_b = 10.0 / h;
-        let red_bottom = panel_bottom + btn_pad_b;
-        let red_top = red_bottom + btn_sz_y;
-        let yel_bottom = red_top + gap_b;
+        let ui = crate::render::ui::layout(w, h);
+        let cx13 = ui.corner_x; let cy13 = ui.corner_y;
+        let btn_rx = ui.btn_radius_x; let btn_ry = ui.btn_radius_y;
+        let panel_left = ui.panel_left; let panel_right = ui.panel_right;
+        let panel_bottom = ui.panel_bottom; let panel_top = ui.panel_top;
+        let btn_left = ui.btn_left; let btn_right = ui.btn_right;
+        let red_bottom = ui.close_bottom; let red_top = ui.close_top;
+        let yel_bottom = ui.minimize_bottom; let yel_top = ui.minimize_top;
         let zd = 0.0;
 
         let (y_r, y_g, y_b) = if hover == 1 { (1.0, 0.95, 0.4) } else { (1.0, 0.882, 0.0) };
@@ -1625,7 +1279,7 @@ let mut cx = vec![0.0f32; n]; let mut cy = vec![0.0f32; n]; let mut cz = vec![0.
         let b2 = ov_base + verts_per;
         push_rounded!(all_v, all_i, b2, btn_left, red_bottom, btn_right, red_top, btn_rx, btn_ry, r_r, r_g, r_b);
         let b3 = b2 + verts_per;
-        push_rounded!(all_v, all_i, b3, btn_left, yel_bottom, btn_right, yel_bottom + btn_sz_y, btn_rx, btn_ry, y_r, y_g, y_b);
+        push_rounded!(all_v, all_i, b3, btn_left, yel_bottom, btn_right, yel_top, btn_rx, btn_ry, y_r, y_g, y_b);
 
         // Билборды-квады сияния (тепловизор): радиоцентр глоу, аддитивный бленд.
         let mut glow_start = all_i.len() as u32;
@@ -1660,15 +1314,11 @@ let mut cx = vec![0.0f32; n]; let mut cy = vec![0.0f32; n]; let mut cz = vec![0.
             self.glow_debug_done = true;
             println!("[Thermal] glow quads: {} objects, {} indices", glows.len(), glow_count);
         }
->>>>>>> Stashed changes
 
         let aspect = self.swapchain_extent.width as f32 / self.swapchain_extent.height as f32;
         self.uniforms.projection = Mat4::perspective(45.0_f32.to_radians(), aspect, 0.1, 100.0);
         self.uniforms.view = Mat4::look_at(self.eye, self.target, Vec3::new(0.0, 1.0, 0.0));
         self.uniforms.model = Mat4::identity();
-<<<<<<< Updated upstream
-        self.update_ubo();
-=======
         self.uniforms.view_pos = [self.eye.x, self.eye.y, self.eye.z, 1.0];
 
         // Матрица вида света (source -> сцена) + проекция для карты теней.
@@ -1690,7 +1340,6 @@ let mut cx = vec![0.0f32; n]; let mut cy = vec![0.0f32; n]; let mut cz = vec![0.
         self.uniforms_ov.view = Mat4::identity();
         self.uniforms_ov.model = Mat4::identity();
         self.update_ubo(self.uniform_buffer_ov, self.uniform_buffer_ov_memory, &self.uniforms_ov);
->>>>>>> Stashed changes
 
         self.rebuild_bufs(&all_v, &all_i);
 
@@ -1700,14 +1349,6 @@ let mut cx = vec![0.0f32; n]; let mut cy = vec![0.0f32; n]; let mut cz = vec![0.
             self.device.reset_command_buffer(cmd, vk::CommandBufferResetFlags::empty()).unwrap();
             self.device.begin_command_buffer(cmd, &vk::CommandBufferBeginInfo::default()).unwrap();
 
-<<<<<<< Updated upstream
-            let cc = vk::ClearColorValue { float32: [0.1, 0.2, 0.3, 1.0] };
-            let cd = vk::ClearDepthStencilValue { depth: 1.0, stencil: 0 };
-            let cv = [vk::ClearValue { color: cc }, vk::ClearValue { depth_stencil: cd }];
-
-            let rpbi = vk::RenderPassBeginInfo::default()
-                .render_pass(self.render_pass)
-=======
             // ===== Pass 1: карта теней (depth-only) =====
             let shadow_enabled = true;
             if shadow_enabled {
@@ -1748,20 +1389,12 @@ let mut cx = vec![0.0f32; n]; let mut cy = vec![0.0f32; n]; let mut cz = vec![0.
                 vec![vk::ClearValue { color: cc }, vk::ClearValue { depth_stencil: cd }]
             };
             let rpbi = vk::RenderPassBeginInfo::default().render_pass(self.render_pass)
->>>>>>> Stashed changes
                 .framebuffer(self.framebuffers[image_index as usize])
                 .render_area(vk::Rect2D::default().offset(vk::Offset2D { x: 0, y: 0 }).extent(self.swapchain_extent))
                 .clear_values(&cv);
 
             self.device.cmd_begin_render_pass(cmd, &rpbi, vk::SubpassContents::INLINE);
             self.device.cmd_bind_pipeline(cmd, vk::PipelineBindPoint::GRAPHICS, self.pipeline.handle);
-<<<<<<< Updated upstream
-            self.device.cmd_bind_descriptor_sets(cmd, vk::PipelineBindPoint::GRAPHICS, self.pipeline_layout,
-                0, std::slice::from_ref(&self.descriptor_set), &[]);
-            self.device.cmd_bind_vertex_buffers(cmd, 0, &[self.vertex_buffer], &[0]);
-            self.device.cmd_bind_index_buffer(cmd, self.index_buffer, 0, vk::IndexType::UINT32);
-            self.device.cmd_draw_indexed(cmd, self.index_count, 1, 0, 0, 0);
-=======
             let vp = vk::Viewport::default().x(0.0).y(0.0)
                 .width(self.swapchain_extent.width as f32).height(self.swapchain_extent.height as f32)
                 .min_depth(0.0).max_depth(1.0);
@@ -1788,6 +1421,7 @@ let mut cx = vec![0.0f32; n]; let mut cy = vec![0.0f32; n]; let mut cz = vec![0.
                 self.device.cmd_bind_vertex_buffers(cmd, 0, &[self.vertex_buffer], &[0]);
                 self.device.cmd_bind_index_buffer(cmd, self.index_buffer, 0, vk::IndexType::UINT32);
             }
+            self.device.cmd_bind_pipeline(cmd, vk::PipelineBindPoint::GRAPHICS, self.ui_pipeline);
             self.device.cmd_bind_descriptor_sets(cmd, vk::PipelineBindPoint::GRAPHICS, self.pipeline_layout, 0, std::slice::from_ref(&self.descriptor_set_ov), &[]);
             let ov_ic = glow_start - scene_ic;
             if ov_ic > 0 { self.device.cmd_draw_indexed(cmd, ov_ic, 1, scene_ic, 0, 0); }
@@ -1800,7 +1434,6 @@ let mut cx = vec![0.0f32; n]; let mut cy = vec![0.0f32; n]; let mut cz = vec![0.
                     self.device.cmd_draw_indexed(cmd, glow_count, 1, glow_start, 0, 0);
                 }
             }
->>>>>>> Stashed changes
             self.device.cmd_end_render_pass(cmd);
 
 // ===== Pass 3: FXAA (только режим fxaa): scene_color → swapchain =====
@@ -1849,91 +1482,23 @@ let mut cx = vec![0.0f32; n]; let mut cy = vec![0.0f32; n]; let mut cz = vec![0.
             .wait_dst_stage_mask(std::slice::from_ref(&vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT))
             .command_buffers(std::slice::from_ref(&cmd))
             .signal_semaphores(std::slice::from_ref(&self.render_finished_semaphore));
-
-        unsafe {
-<<<<<<< Updated upstream
-            self.device.queue_submit(self.queue, std::slice::from_ref(&si), self.fence).unwrap();
-        }
-
-        // Present
         let pi = vk::PresentInfoKHR::default()
             .wait_semaphores(std::slice::from_ref(&self.render_finished_semaphore))
             .swapchains(std::slice::from_ref(&self.swapchain))
             .image_indices(std::slice::from_ref(&image_index));
 
         unsafe {
-            let _ = self.swapchain_loader.queue_present(self.queue, &pi);
-=======
+            self.device.queue_submit(self.queue, std::slice::from_ref(&si), self.fence).unwrap();
             match self.swapchain_loader.queue_present(self.queue, &pi) {
                 Ok(true) | Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => { self.rebuild_swapchain(window_w, window_h); }
                 _ => {}
             }
->>>>>>> Stashed changes
         }
     }
 
     fn rebuild_swapchain(&mut self, w: u32, h: u32) {
-<<<<<<< Updated upstream
-        unsafe { self.device.queue_wait_idle(self.queue).unwrap(); }
-        // Destroy old
-        unsafe {
-            for &fb in &self.framebuffers { self.device.destroy_framebuffer(fb, None); }
-            for &view in &self.swapchain_image_views { self.device.destroy_image_view(view, None); }
-            self.device.destroy_image_view(self.depth_image_view, None);
-            self.device.destroy_image(self.depth_image, None);
-            self.device.free_memory(self.depth_image_memory, None);
-            self.swapchain_loader.destroy_swapchain(self.swapchain, None);
-        }
-
-        self.window_width = w.max(1);
-        self.window_height = h.max(1);
-
-        // Recreate swapchain with a dummy window reference
-        let dummy = crate::platform::CustomWindow::dummy(w, h);
-        let (sc, fmt, ext, imgs) = Self::create_swapchain(
-            self.physical_device, &self.swapchain_loader,
-            self.surface, &self.surface_loader, &dummy,
-        );
-        self.swapchain = sc;
-        self.swapchain_format = fmt;
-        self.swapchain_extent = ext;
-        self.swapchain_images = imgs;
-
-        self.swapchain_image_views = self.swapchain_images.iter().map(|&img| {
-            unsafe {
-                self.device.create_image_view(
-                    &vk::ImageViewCreateInfo::default()
-                        .image(img).view_type(vk::ImageViewType::TYPE_2D).format(fmt)
-                        .subresource_range(vk::ImageSubresourceRange::default()
-                            .aspect_mask(vk::ImageAspectFlags::COLOR)
-                            .base_mip_level(0).level_count(1)
-                            .base_array_layer(0).layer_count(1)),
-                    None,
-                )
-            }.unwrap()
-        }).collect();
-
-        let (dimg, dimg_mem, dimg_view, dfmt) =
-            Self::create_depth(&self.device, &self.instance, self.physical_device, w, h);
-        self.depth_image = dimg;
-        self.depth_image_memory = dimg_mem;
-        self.depth_image_view = dimg_view;
-        self.depth_format = dfmt;
-
-        self.framebuffers = self.swapchain_image_views.iter().map(|&view| {
-            let att = [view, self.depth_image_view];
-            unsafe {
-                self.device.create_framebuffer(
-                    &vk::FramebufferCreateInfo::default()
-                        .render_pass(self.render_pass).attachments(&att)
-                        .width(ext.width).height(ext.height).layers(1),
-                    None,
-                )
-            }.unwrap()
-        }).collect();
-=======
         if w == 0 || h == 0 { return; }
-        let (sc, fmt, ext, imgs) = match Self::create_sc(self.physical_device, &self.swapchain_loader, self.surface, &self.surface_loader, w, h) {
+        let (sc, fmt, ext, imgs) = match Self::create_swapchain(self.physical_device, &self.swapchain_loader, self.surface, &self.surface_loader, w, h) {
             Some(v) => v, None => return,
         };
         unsafe { self.device.queue_wait_idle(self.queue).unwrap(); }
@@ -1975,13 +1540,13 @@ let mut cx = vec![0.0f32; n]; let mut cy = vec![0.0f32; n]; let mut cz = vec![0.
         } else {
             self.framebuffers = self.swapchain_image_views.iter().map(|&view| { let att = [view, self.depth_image_view]; unsafe { self.device.create_framebuffer(&vk::FramebufferCreateInfo::default().render_pass(self.render_pass).attachments(&att).width(ext.width).height(ext.height).layers(1), None) }.unwrap() }).collect();
         }
->>>>>>> Stashed changes
     }
 
     pub fn cleanup(&mut self) {
         unsafe {
             self.device.queue_wait_idle(self.queue).unwrap();
             self.pipeline.cleanup(&self.device);
+            if self.ui_pipeline != vk::Pipeline::null() { self.device.destroy_pipeline(self.ui_pipeline, None); }
             if self.additive_pipeline != vk::Pipeline::null() { self.device.destroy_pipeline(self.additive_pipeline, None); }
             if let Some((img, mem, view, sampler, _ds)) = self.glow_tex {
                 self.device.destroy_sampler(sampler, None);
@@ -1992,22 +1557,6 @@ let mut cx = vec![0.0f32; n]; let mut cy = vec![0.0f32; n]; let mut cz = vec![0.
             self.device.destroy_pipeline_layout(self.pipeline_layout, None);
             self.device.destroy_descriptor_pool(self.descriptor_pool, None);
             self.device.destroy_descriptor_set_layout(self.descriptor_set_layout, None);
-<<<<<<< Updated upstream
-            self.device.destroy_buffer(self.vertex_buffer, None);
-            self.device.free_memory(self.vertex_buffer_memory, None);
-            self.device.destroy_buffer(self.index_buffer, None);
-            self.device.free_memory(self.index_buffer_memory, None);
-            self.device.destroy_buffer(self.uniform_buffer, None);
-            self.device.free_memory(self.uniform_buffer_memory, None);
-            self.device.destroy_image_view(self.depth_image_view, None);
-            self.device.destroy_image(self.depth_image, None);
-            self.device.free_memory(self.depth_image_memory, None);
-            self.device.destroy_fence(self.fence, None);
-            self.device.destroy_semaphore(self.image_available_semaphore, None);
-            self.device.destroy_semaphore(self.render_finished_semaphore, None);
-            self.device.destroy_command_pool(self.command_pool, None);
-            self.device.destroy_render_pass(self.render_pass, None);
-=======
             self.device.destroy_framebuffer(self.shadow_framebuffer, None);
             self.device.destroy_render_pass(self.shadow_render_pass, None);
             self.device.destroy_sampler(self.shadow_map_sampler, None);
@@ -2051,7 +1600,6 @@ let mut cx = vec![0.0f32; n]; let mut cy = vec![0.0f32; n]; let mut cz = vec![0.
             self.device.free_memory(self.texture_image_memory, None);
             self.device.destroy_fence(self.fence, None); self.device.destroy_semaphore(self.image_available_semaphore, None); self.device.destroy_semaphore(self.render_finished_semaphore, None);
             self.device.destroy_command_pool(self.command_pool, None); self.device.destroy_render_pass(self.render_pass, None);
->>>>>>> Stashed changes
             for &fb in &self.framebuffers { self.device.destroy_framebuffer(fb, None); }
             for &view in &self.swapchain_image_views { self.device.destroy_image_view(view, None); }
             self.swapchain_loader.destroy_swapchain(self.swapchain, None);

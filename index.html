@@ -145,11 +145,6 @@
     <a href="#arch-utils">Утилиты</a>
   </div>
   <div class="sidebar-section">
-<<<<<<< Updated upstream:sgs-complete-documentation.html
-    <div class="sidebar-section-title">Формат .SGSS</div>
-    <a href="#sgss-syntax">Синтаксис</a>
-    <a href="#sgss-examples">Примеры</a>
-=======
     <div class="sidebar-section-title">Формат MFF</div>
     <a href="#mff-intro">Общий формат</a>
     <a href="#mff-settings" class="sub">Настройки окна</a>
@@ -160,7 +155,6 @@
     <a href="#mff-animation" class="sub">Анимация</a>
     <a href="#mff-examples">Примеры</a>
     <a href="#mff-reference" class="sub">Полная BNF</a>
->>>>>>> Stashed changes:docs/main-frame.html
   </div>
   <div class="sidebar-section">
     <div class="sidebar-section-title">Экосистема</div>
@@ -1254,11 +1248,6 @@ pub struct MemoryTracker;  // зарезервировано
 pub struct Profiler;       // зарезервировано</code></pre>
 </section>
 
-<<<<<<< Updated upstream:sgs-complete-documentation.html
-<!-- ====== SGSS FORMAT ====== -->
-<section id="sgss">
-<h1>Формат .SGSS</h1>
-=======
 <!-- ====== MFF FORMAT ====== -->
 <section id="mff">
 <h1>Формат MFF</h1>
@@ -1280,24 +1269,11 @@ main.frame. Человекочитаемый, не требует компиля
 </div>
 
 <h2 id="mff-intro">Общий формат</h2>
->>>>>>> Stashed changes:docs/main-frame.html
 <p>
 <code>.sgss</code> — собственный текстовый формат описания сцен Snow Graphics System.
 Человекочитаемый, не требует компиляции, редактируется в любом текстовом редакторе.
 </p>
 
-<<<<<<< Updated upstream:sgs-complete-documentation.html
-<h2 id="sgss-syntax">Синтаксис</h2>
-<pre><code>window &lt;width&gt; &lt;height&gt;                # Настройки окна
-title "&lt;заголовок&gt;"                     # Заголовок окна
-
-# 2D-примитивы:
-triangle                                    # Треугольник
-&lt;x1&gt; &lt;y1&gt;
-&lt;x2&gt; &lt;y2&gt;
-&lt;x3&gt; &lt;y3&gt;
-&lt;r&gt; &lt;g&gt; &lt;b&gt;
-=======
 <h2 id="mff-settings">Настройки окна</h2>
 <p>Все настройки опциональны и имеют значения по умолчанию. Разбираются модулем
 <code>scene_settings.rs</code>.</p>
@@ -1328,20 +1304,13 @@ triangle                                    # Треугольник
 </p>
 <pre><code>position 2.0 0.0 0.0
 physics: mass=5.0, restitution=0.8, density=2.0
->>>>>>> Stashed changes:docs/main-frame.html
 
 square                                      # Квадрат
 &lt;x&gt; &lt;y&gt; &lt;size&gt;
 &lt;r&gt; &lt;g&gt; &lt;b&gt;
 
-<<<<<<< Updated upstream:sgs-complete-documentation.html
-circle                                      # Круг
-&lt;cx&gt; &lt;cy&gt; &lt;radius&gt; &lt;segments&gt;
-&lt;r&gt; &lt;g&gt; &lt;b&gt;
-=======
 <h2 id="mff-2d">2D-примитивы</h2>
 <p>Разбираются модулем <code>static_objects.rs</code>. Все координаты 2D-фигур лежат в плоскости Z=0.</p>
->>>>>>> Stashed changes:docs/main-frame.html
 
 # 3D-примитивы:
 cube                                        # Куб
@@ -1353,11 +1322,6 @@ sphere                                      # Сфера
 &lt;sectors&gt;
 &lt;r&gt; &lt;g&gt; &lt;b&gt;
 
-<<<<<<< Updated upstream:sgs-complete-documentation.html
-# Анимация:
-animate &lt;shape&gt;                             # Анимированный объект
-    keyframe &lt;time&gt;                         # Ключевой кадр
-=======
 <h3>circle — круг</h3>
 <pre><code>circle
 &lt;cx&gt; &lt;cy&gt; &lt;radius&gt; &lt;segments&gt;   # центр, радиус, число сегментов (мин. 3)
@@ -1405,7 +1369,6 @@ animate &lt;shape&gt;                             # Анимированный �
         pos &lt;x&gt; &lt;y&gt; &lt;z&gt;      # позиция (или position)
         color &lt;r&gt; &lt;g&gt; &lt;b&gt;    # цвет
     keyframe &lt;time&gt;
->>>>>>> Stashed changes:docs/main-frame.html
         pos &lt;x&gt; &lt;y&gt; &lt;z&gt;
         color &lt;r&gt; &lt;g&gt; &lt;b&gt;</code></pre>
 
@@ -1413,15 +1376,11 @@ animate &lt;shape&gt;                             # Анимированный �
 
 <h3>Базовый 2D (треугольник + квадрат + круг):</h3>
 <pre><code>window 800 600
-<<<<<<< Updated upstream:sgs-complete-documentation.html
-title "Моя первая сцена"
-=======
 title "MF - Full Scene"
 render_mode heavy
 camera true
 resizable false
 wireframe false
->>>>>>> Stashed changes:docs/main-frame.html
 
 triangle
 -0.5 -0.5
@@ -1469,11 +1428,6 @@ animate circle
         pos 0.0 0.0 0.0
         color 0.0 0.0 1.0</code></pre>
 
-<<<<<<< Updated upstream:sgs-complete-documentation.html
-<h3>144 круга (реальная демо-сцена из Alpha 3.1):</h3>
-<pre><code>window 1000 800
-title "Snow Graphics System - 144 Circles"
-=======
 <h3>Реальная демо-сцена <code>assets/level1.mff</code>:</h3>
 <pre><code>window 800 600
 title "MF - Animation Demo"
@@ -1481,16 +1435,9 @@ resizable true
 render_mode heavy
 camera true
 wireframe false
->>>>>>> Stashed changes:docs/main-frame.html
 
 square 0 0 5 0 0 0
 
-<<<<<<< Updated upstream:sgs-complete-documentation.html
-# Сетка 12×12 кругов, диаметр 0.06, 45 сегментов
-# Цвета плавно меняются от красного к жёлтому, зелёному, синему
-# Первый круг: -0.85 -0.85 0.06 45 / 1.0 0.0 0.0
-# Последний круг: 0.80 0.80 0.06 45 / 0.6 0.0 0.0</code></pre>
-=======
 # Куб: прыгает вверх-вниз (независимые часы анимации)
 animate cube
     keyframe 0.0
@@ -1540,7 +1487,6 @@ phys         := ( "m"|"mass" ) "=" NUM | ( "f"|"restitution"|"elasticity" ) "=" 
 BOOL         := "true" | "false" | "1" | "0" | "on" | "off"
 COLOR        := NUM NUM NUM
 VEC2         := NUM NUM</code></pre>
->>>>>>> Stashed changes:docs/main-frame.html
 </section>
 
 <!-- ====== ECOSYSTEM ====== -->
